@@ -57,27 +57,26 @@ int esMBR(char *base){
 
 int LeeDirArch(int dr, int i, short int *edr)
 {
- char arcvbn[12], ext[3], tempc[8];
+  char arcvbn[12], ext[3], tempc[8];
   int j, temp=0;
 
   j=dr+i;
   //i=0;
   while(temp<=*edr+32)
   {
-   memset(arcvbn,0,12);
-     strcpy(tempc, &map[j+0x00]); // nombre del archivo
-  tempc[8]='\0';
-      strcpy(arcvbn,tempc);
-     arcvbn[8]='\0';
-   strcpy(ext, &map[j+ 0x08]); // extencion del archivo
-  ext[3]='\0'; 
+    memset(arcvbn,0,12);
+    strcpy(tempc, &map[j+0x00]); // nombre del archivo
+    tempc[8]='\0';
+    strcpy(arcvbn,tempc);
+    arcvbn[8]='\0';
+    strcpy(ext, &map[j+ 0x08]); // extencion del archivo
+    ext[3]='\0'; 
     strcat(tempc, ext);
-   short int *tipo = (short int *)&map[j+0x0b];
-   short int *cluster = (short int *)&map[j+0x1a];
-    int *tama = (int *)&map[j+0x1c]; //si el tamaño es 0 entonces esun directorio 
-                     
-  printf("Archivo %s,  %s  %d   ,%d      ,%d\n", arcvbn, tempc, *tipo, *cluster, *tama);
-  j=j+32;
+    short int *tipo = (short int *)&map[j+0x0b];
+    short int *cluster = (short int *)&map[j+0x1a];
+    int *tama = (int *)&map[j+0x1c]; //si el tamaño es 0 entonces esun directorio
+    printf("Archivo %s,  %s  %d   ,%d      ,%d\n", arcvbn, tempc, *tipo, *cluster, *tama);
+    j=j+32;
     temp=temp+32;
 }
 }
@@ -86,7 +85,7 @@ int leerdatos(int i){
   char ids[5];
   char ev2[11];
   char ids2[5];
- 
+
   short int *ts = (short int *)&map[i+11];
   printf("Tamano del Sector: %d\n", *ts);
 
@@ -126,47 +125,47 @@ int leerdatos(int i){
 }
 
 int partitions(){
-   int a=0, a2=0;
+  int a=0, a2=0;
   if(esMBR(map)){
-   printf("\nEs MBS\n\n");
+    printf("\nEs MBR\n\n");
 
-   for(int i=0; i<=3; i++)
-   {
-    int h =(byte)map[0x1BE + 1 + (i*16)];
-    if(h!=0){
-    printf("CHS Paricion %d\n", i+1);
-    printf("Head: %02x\n", h);
-    int s = map[0x1BE +  2 + (i*16)] & 0x3F;
-    int c = map[0x1BE + 2 + (i*16)] & 0xC0;
-     c<<=2;
-    printf("Sector: %02x\n", s);
-    c |= map[0x1BE + 3 + (i*16)];
-    printf("Cylinder: %02x\n",c);
-    a= ((c*255 + h)*63 +(s-1))*512;
-    printf("Partition Start: %02x\n\n", a);
-    
-    
-    int h2 =(byte)map[a+0x1BE + 1];
-    if(h2!=0)
+    for(int i=0; i<=3; i++)
     {
-    printf("Partition Extended\n");
-    printf("Head: %02x\n", h2);
-    int s2 = map[a+0x1BE + 2] & 0x3F;
-    int c2 = map[a+ 0x1BE + 2] & 0xC0;
-     c2<<=2;
-    printf("Sector: %02x\n", s2);
-    c2 |= map[a+ 0x1BE + 3];
-    printf("Cylinder: %02x\n",c2);
-    a2= ((c2*255 + h2)*63 +(s2-1))*512;
-    printf("Partition Extended Start: %02x\n\n", a2);
-    leerdatos(a2);
-    }else{
-      leerdatos(a);
+      int h =(byte)map[0x1BE + 1 + (i*16)];
+      if(h!=0) {
+      printf("CHS Paricion %d\n", i+1);
+      printf("Head: %02x\n", h);
+      int s = map[0x1BE +  2 + (i*16)] & 0x3F;
+      int c = map[0x1BE + 2 + (i*16)] & 0xC0;
+      c<<=2;
+      printf("Sector: %02x\n", s);
+      c |= map[0x1BE + 3 + (i*16)];
+      printf("Cylinder: %02x\n",c);
+      a= ((c*255 + h)*63 +(s-1))*512;
+      printf("Partition Start: %02x\n\n", a);
+      
+      
+      int h2 =(byte)map[a+0x1BE + 1];
+      if(h2!=0)
+      {
+        printf("Partition Extended\n");
+        printf("Head: %02x\n", h2);
+        int s2 = map[a+0x1BE + 2] & 0x3F;
+        int c2 = map[a+ 0x1BE + 2] & 0xC0;
+        c2<<=2;
+        printf("Sector: %02x\n", s2);
+        c2 |= map[a+ 0x1BE + 3];
+        printf("Cylinder: %02x\n",c2);
+        a2= ((c2*255 + h2)*63 +(s2-1))*512;
+        printf("Partition Extended Start: %02x\n\n", a2);
+        leerdatos(a2);
+        }else{
+          leerdatos(a);
+        }
+      }
     }
-    }
-   }
   }else{
-    printf("NO ES MBS\n");
+    printf("NO ES MBR\n");
   }
 }
 int abre(char *filename) {

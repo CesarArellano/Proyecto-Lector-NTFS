@@ -16,3 +16,10 @@ static uint32_t verificaTamanoParticion(uint32_t);
 static void verificaInicioSector(uint32_t);
 static void verificaParticionFS(uint32_t);
 static char *conversionTamanoSector(uint32_t);
+static void verificaClusters_MFT(uint32_t);
+
+
+// DWORD	A 32-bit unsigned integer
+// WORD	 A 16-bit unsigned integer.
+// LONGLONG	A 64-bit signed integer. 
+// Referencia https://docs.microsoft.com/en-us/windows/win32/winprog/windows-data-types?redirectedfrom=MSDN
