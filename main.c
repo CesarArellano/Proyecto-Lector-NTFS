@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "definitions.h"
+#include "dataDisk.h"
 
 
 int main(int argc, char *argv[]) {
@@ -30,7 +31,10 @@ int main(int argc, char *argv[]) {
         verificaParticionFS(inicio + offsetPartitionDescription);
         verificaClusters_MFT(inicio);
     }
+    printf("Mostrando nombres del directorio NTFS\n\n");
+    mostrarDirectorioNTFS(argv[1]);
 }
+
 static void verificaClusters_MFT(uint32_t inicio) {
     uint8_t sectorPerCluster, clustersPerIB, mediaDescriptor;
     uint16_t sectorPerTrack, numHeads;
