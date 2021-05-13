@@ -1,3 +1,7 @@
+//  @file    :  main.c
+//  @authors :  Cesar Mauricio Arellano Velasquez, ALlan Jair Escamilla Hernandez y Raul Gonzalez Portillo
+//  @date    :  12 mayo 2021
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -21,16 +25,16 @@ void leerArchivoBinario(char *filename);
 char *mapeandoArchivo(char *filename);
 void leerValoresdeParticion();
 void mostrarArchivos(int);
-void RefrescarPantalla(int);
 void ImprimeTipoNombre(ATTR_FILENAME, struct InfoArchivo *);
 void imprimirTamanoResidente(BYTE Res, LONGLONG Size);
 void extraerTiempoArchivos(const int64_t time, struct tm *ts);
 void imprimirTiempoArchivos(struct tm ts);
-void hexEdit(int initParticion, struct InfoArchivo arch);
-int leeChar();
-int hex_to_int(char c);
-int hex_to_decimal(char c, char d);
+void mostrarHexadecimal();
+char *generarLinea(char *base, int dir);
+int leerCaracter();
 
+// Variables para abrir la imagen;
+int fd, fs;
 
 int main(int argc, char *argv[]) {
 	int particion, opcion;
@@ -48,10 +52,12 @@ int main(int argc, char *argv[]) {
 
     do {
         system("clear");
+        printf("Integrantes:\nCésar Arellano, Jair Escamilla, Raúl González\n\n");
+        printf("Menú:\n\n");
         printf("1.- Leer valores de particiones\n");
         printf("2.- Leer los directorios de cada partición\n");
         printf("3.- Leer archivos en hexadecimal\n");
-        printf("4.- Salir del programa\n");
+        printf("4.- Salir del programa\n\n");
         printf("Ingresa una opcion-> ");
         scanf(" %d", &opcion);
         system("clear");
@@ -74,7 +80,7 @@ int main(int argc, char *argv[]) {
 
                 break;
             case 3:
-                
+                mostrarHexadecimal();
                 break;
             case 4 :
                 exit(1);
@@ -99,14 +105,14 @@ void leerArchivoBinario(char *filename) {
 }
 
 char *mapeandoArchivo(char *filename) {
-    int fd = open(filename, O_RDWR);
+    fd = open(filename, O_RDWR);
     if (fd == -1) {
         perror("Error abriendo el archivo");
         return(NULL);
     }
     struct stat st;
     fstat(fd,&st);
-    int fs = st.st_size;
+    fs = st.st_size;
 
     char *map = mmap(0, fs, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (map == MAP_FAILED) {
@@ -341,50 +347,118 @@ void imprimirTiempoArchivos(struct tm ts){
 	printf("%4d-%02d-%02d %02d:%02d:%02d", year, ts.tm_mon, ts.tm_mday, ts.tm_hour, ts.tm_min, ts.tm_sec);
 }
 
-/**
- * HEX EDITOR
- * */
+char *generarLinea(char *base, int dir)
+{
+    char line[65];
+    int offset = 0;
 
-char *hazLinea(char *base, int dir) {
-	char linea[100]; // La linea es mas pequeña
-	int o=0;
-	// Muestra 16 caracteres por cada linea
-	o += sprintf(linea,"%08x ",dir); // offset en hexadecimal
-	for(int i=0; i < 4; i++) {
-		unsigned char a,b,c,d;
-		a = base[dir+4*i+0];
-		b = base[dir+4*i+1];
-		c = base[dir+4*i+2];
-		d = base[dir+4*i+3];
-		o += sprintf(&linea[o],"%02x %02x %02x %02x ", a, b, c, d);
-	}
-	for(int i=0; i < 16; i++) {
-		if (isprint(base[dir+i])) {
-			o += sprintf(&linea[o],"%c",base[dir+i]);
-		}
-		else {
-			o += sprintf(&linea[o],".");
-		}
-	}
-	sprintf(&linea[o],"\n");
+    offset += sprintf(line, "%08x ", dir);
+    for (int i = 0; i < 4; i++)
+    {
+        unsigned char a, b, c, d;
+        a = base[dir + 4 * i + 0];
+        b = base[dir + 4 * i + 1];
+        c = base[dir + 4 * i + 2];
+        d = base[dir + 4 * i + 3];
+        offset += sprintf(&line[offset], "%02x %02x %02x %02x ", a, b, c, d);
+    }
 
-	return(strdup(linea));
+    for (int i = 0; i < 16; i++)
+    {
+        if (isprint(base[dir + i]))
+        {
+        offset += sprintf(&line[offset], "%c", base[dir + i]);
+        }
+        else
+        {
+        offset += sprintf(&line[offset], ".");
+        }
+    }
+    sprintf(&line[offset], "\n");
+
+    return (strdup(line));
 }
 
-int leeChar() {
-  int chars[5];
-  int ch,i=0;
-  nodelay(stdscr, TRUE);
-  while((ch = getch()) == ERR); /* Espera activa */
-  ungetch(ch);
-  while((ch = getch()) != ERR) {
-    chars[i++]=ch;
-  }
-  /* convierte a numero con todo lo leido */
-  int res=0;
-  for(int j=0;j<i;j++) {
-    res <<=8;
-    res |= chars[j];
-  }
-  return res;
+int leerCaracter()
+{
+    int chars[5];
+    int character, i = 0;
+
+    nodelay(stdscr, TRUE);
+
+    while ((character = getch()) == ERR);
+    ungetch(character);
+
+    while ((character = getch()) != ERR)
+    {
+        chars[i++] = character;
+    }
+
+    int result = 0;
+    for (int j = 0; j < i; j++)
+    {
+        result <<= 8;
+        result |= chars[j];
+    }
+
+    return result;
+}
+
+void mostrarHexadecimal()
+{
+    initscr();
+    raw();
+    keypad(stdscr, TRUE);
+    noecho();
+    cbreak();
+
+    int x, y, control_char;
+    unsigned int row, column;
+    char *line;
+
+    for (int i = 0; i < 100; i++)
+    {
+        line = generarLinea(map, i * 16);
+        mvprintw(i, 0, line);
+        refresh();
+    }
+
+    do
+    {
+    row = 0 + y;
+    column = (x < 16 ? 9 + x * 3 : 41 + x);
+
+    move(row, column);
+    control_char = leerCaracter();
+
+    switch (control_char)
+    {
+    case KEY_UP:
+        y -= 1;
+        break;
+    case KEY_DOWN:
+        y += 1;
+        break;
+    case KEY_RIGHT:
+        x += 1;
+        break;
+    case KEY_LEFT:
+        x -= 1;
+        break;
+    default:
+        break;
+    }
+
+    } while (control_char != 24); // Salir con CTRL + X
+
+    refresh();
+    leerCaracter();
+
+    if (munmap(map, fd) == -1)
+    {
+    perror("No se pudo mapear");
+    }
+    close(fd);
+
+    endwin();
 }
